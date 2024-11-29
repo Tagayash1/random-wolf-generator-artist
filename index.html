@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>エセ芸術家</title>
+<style>
+  body {
+    font-family: 'Arial', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    margin: 0;
+    text-align: center;
+    background-color: #fdf5e6;
+  }
+  .screen {
+    display: none;
+  }
+  #settingsScreen {
+    display: block;
+  }
+  button {
+    font-size: 1.2em;
+    padding: 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 10px;
+  }
+  button:hover {
+    background-color: #0056b3;
+  }
+</style>
+</head>
+<body>
+
+<!-- 設定画面 -->
+<div id="settingsScreen" class="screen">
+  <h1>エセ芸術家</h1>
+  <h3>ウルフと村人の人数を設定してください</h3>
+  <label for="wolfCount">ウルフ:</label>
+  <input type="number" id="wolfCount" min="1" value="1">
+  <label for="villagerCount">村人:</label>
+  <input type="number" id="villagerCount" min="1" value="4">
+  <button id="startGameButton">ゲームスタート</button>
+</div>
+
+<!-- 案内画面 -->
+<div id="instructionScreen" class="screen">
+  <p>お題を表示します。他のプレイヤーに見られないように表示してください。</p>
+  <button id="showRoleButton">表示</button>
+</div>
+
+<!-- 役割表示画面 -->
+<div id="roleScreen" class="screen">
+  <p id="roleText"></p>
+  <p id="extraInfo"></p>
+  <button id="nextPlayerButton">次のプレイヤーへ</button>
+</div>
+
+<!-- 描画プロンプト画面 -->
+<div id="drawingPromptScreen" class="screen">
+  <p>お題について絵を書いてください<br>※1人20秒程度回してください</p>
+  <p id="timerText"></p>
+</div>
+
+<!-- 次のラウンド画面 -->
+<div id="nextRoundScreen" class="screen">
+  <h2>ラウンド終了！</h2>
+  <button id="startNextRoundButton">次のラウンドを開始</button>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  let wolfCount = 0;
+  let villagerCount = 0;
+  let characterPool = [];
+  let currentRound = 1;
+  const totalRounds = 2;
+  let timer;
+  let remainingTime = 0;
+
+  const screens = {
+    settings: document.getElementById("settingsScreen"),
+    instruction: document.getElementById("instructionScreen"),
+    role: document.getElementById("roleScreen"),
+    drawing: document.getElementById("drawingPromptScreen"),
+    nextRound: document.getElementById("nextRoundScreen"),
+  };
+
+  const roles = [
+    { genre: "スポーツ", topic: "マラソン" },
+    { genre: "ファーストフード店", topic: "ケンタッキー" },
+  ];
+
+  // 画面を切り替える関数
+  const showScreen = (screen) => {
+    Object.values(screens).forEach((s) => (s.style.display = "none"));
+    screens[screen].style.display = "block";
+  };
+
+  // ゲームスタート
+  document.getElementById("startGameButton").addEventListener("click", () => {
+    wolfCount = parseInt(document.getElementById("wolfCount").value, 10);
+    villagerCount = parseInt(document.getElementById("villagerCount").value, 10);
+
+    if (wolfCount + villagerCount < 1) {
+      alert("ウルフと村人の合計人数を1以上にしてください。");
+      return;
+    }
+
+    characterPool = Array(wolfCount).fill("ウルフ").concat(Array(villagerCount).fill("村人"));
+    shuffleArray(characterPool);
+    showScreen("instruction");
+  });
+
+  // 役割表示
+  document.getElementById("showRoleButton").addEventListener("click", () => {
+    if (characterPool.length === 0) {
+      showScreen("drawing");
+      startTimer();
+      return;
+    }
+
+    const role = characterPool.pop();
+    document.getElementById("roleText").textContent = `役職: ${role}`;
+    document.getElementById("extraInfo").textContent =
+      role === "ウルフ" ? "ジャンルのみ表示: " + roles[currentRound - 1].genre : "お題: " + roles[currentRound - 1].topic;
+
+    showScreen("role");
+  });
+
+  // 次のプレイヤー
+  document.getElementById("nextPlayerButton").addEventListener("click", () => {
+    showScreen("instruction");
+  });
+
+  // タイマー開始
+  const startTimer = () => {
+    remainingTime = wolfCount + villagerCount === 5 ? 100 : 120;
+    const timerText = document.getElementById("timerText");
+    timer = setInterval(() => {
+      timerText.textContent = `残り時間: ${remainingTime}秒`;
+      remainingTime--;
+      if (remainingTime < 0) {
+        clearInterval(timer);
+        showScreen("nextRound");
+      }
+    }, 1000);
+  };
+
+  // 次のラウンド
+  document.getElementById("startNextRoundButton").addEventListener("click", () => {
+    currentRound++;
+    if (currentRound > totalRounds) {
+      alert("ゲーム終了！お疲れさまでした！");
+      showScreen("settings");
+    } else {
+      characterPool = Array(wolfCount).fill("ウルフ").concat(Array(villagerCount).fill("村人"));
+      shuffleArray(characterPool);
+      showScreen("instruction");
+    }
+  });
+
+  // 配列をシャッフル
+  const shuffleArray = (array) => {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+  };
+});
+</script>
+</body>
+</html>
